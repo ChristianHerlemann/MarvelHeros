@@ -1,0 +1,137 @@
+name: "Marvel"
+
+options:
+  deploymentTarget: 
+    iOS: 16.0
+  developmentLanguage: de
+  postGenCommand: |
+    bundle install
+    bundle exec pod install
+  groupOrdering:
+    - pattern: "^$"
+      order:
+        [
+          Marvel,
+          Heros,
+          Shared,
+          Networking,
+          MarvelTests
+        ]
+
+configs:
+  Debug: debug
+  Release: release
+
+packages:
+  Stinsen:
+    url: https://github.com/rundfunk47/stinsen
+    from: 2.0.13
+  RswiftLibrary:
+    url: https://github.com/mac-cain13/R.swift
+    from: 7.3.2
+
+targets:
+  Marvel:
+    type: application
+    platform: iOS
+    deploymentTarget: 16.0
+    sources:
+      - path: Marvel
+        optional: true
+    dependencies:
+      - target: Heros
+      - target: Shared
+      - target: Networking
+      - package: Stinsen
+    info:
+      path: Marvel/Info.plist
+      properties:
+        UILaunchScreen:
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: de.herlor.marvel
+        OTHER_SWIFT_FLAGS: "$(inherited) -D Marvel"
+    preBuildScripts:
+      - script: |
+          if which swiftlint >/dev/null; then
+            swiftlint autocorrect --format
+          fi
+        name: SwiftLint autocorrect
+    postBuildScripts:
+      - script: |
+          if which swiftlint >/dev/null; then
+            swiftlint
+          else
+            echo "warning: SwiftLint not installed, download from https://github.com/realm/SwiftLint"
+          fi
+        name: SwiftLint lint
+    scheme:
+      testTargets: [MarvelTests]
+
+  Heros:
+    type: framework
+    platform: iOS
+    sources:
+      - path: Heros
+    dependencies:
+      - target: Networking
+      - target: Shared
+      - package: Stinsen
+      - package: RswiftLibrary
+    info:
+      path: Heros/Info.plist
+    settings:
+      base:
+        APPLICATION_EXTENSION_API_ONLY: true
+        PROVISIONING_PROFILE_SPECIFIER: ""
+      configs:
+        debug:
+          PRODUCT_BUNDLE_IDENTIFIER: de.herlor.marvel.debug.heros
+        release:
+          PRODUCT_BUNDLE_IDENTIFIER: de.herlor.marvel.heros
+
+  Networking:
+    type: framework
+    platform: iOS
+    sources:
+      - path: Networking
+    info:
+      path: Networking/Info.plist
+    settings:
+      base:
+        APPLICATION_EXTENSION_API_ONLY: true
+        PROVISIONING_PROFILE_SPECIFIER: ""
+      configs:
+        debug:
+          PRODUCT_BUNDLE_IDENTIFIER: de.herlor.marvel.debug.networking
+        release:
+          PRODUCT_BUNDLE_IDENTIFIER: de.herlor.marvel.networking
+
+  Shared:
+    type: framework
+    platform: iOS
+    sources:
+      - path: Shared
+    dependencies:
+      - target: Networking
+      - package: Stinsen
+    info:
+      path: Shared/Info.plist
+    settings:
+      base:
+        APPLICATION_EXTENSION_API_ONLY: true
+        PROVISIONING_PROFILE_SPECIFIER: ""
+      configs:
+        debug:
+          PRODUCT_BUNDLE_IDENTIFIER: de.herlor.marvel.debug.shared
+        release:
+          PRODUCT_BUNDLE_IDENTIFIER: de.herlor.marvel.shared
+
+  MarvelTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: 16.0
+    sources:
+      - path: MarvelTests
+    dependencies:
+      - target: Marvel
